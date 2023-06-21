@@ -1,0 +1,12 @@
+﻿  DatModifier.cpp
+C:\Users\Pandax40\source\repos\MCInstaller\MCInstaller\DatModifier.cpp(8,23): warning C4244: 'inicializando': conversión de 'LONGLONG' a 'DWORD'; posible pérdida de datos
+C:\Users\Pandax40\source\repos\MCInstaller\MCInstaller\DatModifier.cpp(32,47): warning C4267: '=': conversión de 'size_t' a 'int'; posible pérdida de datos
+C:\Users\Pandax40\source\repos\MCInstaller\MCInstaller\DatModifier.cpp(58,34): warning C4244: 'argumento': conversión de 'LONGLONG' a 'DWORD'; posible pérdida de datos
+  FileManager.cpp
+  MCInstaller.cpp
+C:\Users\Pandax40\source\repos\MCInstaller\MCInstaller\MCInstaller.cpp(62,18): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
+  Generando código
+  Previous IPDB not found, fall back to full compilation.
+  All 140 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Generación de código finalizada
+  MCInstaller.vcxproj -> C:\Users\Pandax40\source\repos\MCInstaller\x64\Release\MCInstaller.exe
