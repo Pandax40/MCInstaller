@@ -46,11 +46,12 @@ bool FileManager::DownloadFile(string link, string name, string path)
 
 bool FileManager::InstallFile(string name, string path)
 {
-    string aux_path = "cmd.exe /C " + path + "\\" + name;
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
+    string aux_path = "cmd.exe /C \"" + path + "\\" + name + "\"";
     char cmdLine[1024];
     strcpy_s(cmdLine, aux_path.c_str());
+    cout << aux_path;
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));

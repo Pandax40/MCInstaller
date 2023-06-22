@@ -19,7 +19,7 @@
 #define SPARK_LINK "https://mediafilez.forgecdn.net/files/4587/309/spark-1.10.42-forge.jar"
 #define VOICE_LINK "https://mediafilez.forgecdn.net/files/4574/217/voicechat-forge-1.20-2.4.9.jar"
 #define COMPATIBLE_LINK "https://mediafilez.forgecdn.net/files/4580/511/MyServerIsCompatible-1.20-1.0.jar"
-#define ZOOM_LINK "https://mediafilez.forgecdn.net/files/4575/241/ok_zoomer-5.0.0-beta.12%2B1.20.jar"
+#define ZOOM_LINK "https://mediafilez.forgecdn.net/files/4576/19/okzoomer-forge-1.20-3.0.0.jar"
 #define SERVER_NAME "TFF"
 #define SERVER_IP "tff.sytes.net"
 #define TEXTURES true
@@ -29,6 +29,7 @@ HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 /*
 * TODO:
 *  - Poder elegir cuanta ram se dedica al Minecraft.
+*  - ERROR: Si el usuario tiene un espacio en el nombre, se bugea
 *  - Hacer que hacepte lo de las texturas.
 *  - Poner los links de los mods en array o lista para poder leer facilmente en un while.
 */
@@ -83,16 +84,18 @@ int main()
     if (not FileManager::GetPath(FOLDERID_LocalAppData, t_path))
         return 0;
     t_path += "\\Temp\\mcinstaller";
-    while (not have_java(17))
+    while (have_java(17))
     {
         Sleep(2000); 
         SetConsoleTextAttribute(hConsole, 7);
-        std::cout << "[INFO] Instala la version de Java 20\n";
+        std::cout << "[INFO] Descargando la version de Java 20, espere\n";
         SetConsoleTextAttribute(hConsole, 4);
         if (not FileManager::MakeDir(t_path))
             return 0;
         if(not FileManager::DownloadFile(JAVA_LINK, "java-20.exe", t_path))
             return 0;
+        SetConsoleTextAttribute(hConsole, 7);
+        std::cout << "[INFO] Sigue los pasos del instalador de Java\n";
         if (not FileManager::InstallFile("java-20.exe", t_path))
             return 0;
     }
@@ -171,14 +174,13 @@ int main()
     if (not PathIsDirectoryA(mc_path.c_str()))
     {
         SetConsoleTextAttribute(hConsole, 5);
-        cout << "[WARN] Instala el Forge client en la carpeta por defecto!\n";
+        cout << "[WARN] Espera a que se abra el Forge e Instalalo en la carpeta por defecto!\n";
         Sleep(2000);
 
         if (not FileManager::DownloadFile(FORGE_LINK, "forge.jar", t_path))
             return 0;
         if (not FileManager::InstallFile("forge.jar", t_path))
             return 0;
-        system("PAUSE");
     }
     if (sky_installed)
     {
