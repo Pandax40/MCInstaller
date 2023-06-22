@@ -19,6 +19,7 @@
 #define SPARK_LINK "https://mediafilez.forgecdn.net/files/4587/309/spark-1.10.42-forge.jar"
 #define VOICE_LINK "https://mediafilez.forgecdn.net/files/4574/217/voicechat-forge-1.20-2.4.9.jar"
 #define COMPATIBLE_LINK "https://mediafilez.forgecdn.net/files/4580/511/MyServerIsCompatible-1.20-1.0.jar"
+#define ZOOM_LINK "https://mediafilez.forgecdn.net/files/4575/241/ok_zoomer-5.0.0-beta.12%2B1.20.jar"
 #define SERVER_NAME "TFF"
 #define SERVER_IP "tff.sytes.net"
 #define TEXTURES true
@@ -150,6 +151,9 @@ int main()
         return 0;
 
     if (not FileManager::DownloadFile(COMPATIBLE_LINK, "is-compatible.jar", mc_path))
+        return 0;
+
+    if (not FileManager::DownloadFile(ZOOM_LINK, "zoom.jar", mc_path))
         return 0;
 
     SetConsoleTextAttribute(hConsole, 7);
