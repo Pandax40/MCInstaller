@@ -84,7 +84,7 @@ int main()
     if (not FileManager::GetPath(FOLDERID_LocalAppData, t_path))
         return 0;
     t_path += "\\Temp\\mcinstaller";
-    while (have_java(17))
+    while (not have_java(17))
     {
         Sleep(2000); 
         SetConsoleTextAttribute(hConsole, 7);
