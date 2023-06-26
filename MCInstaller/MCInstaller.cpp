@@ -10,7 +10,7 @@
 
 //https://learn.microsoft.com/es-es/windows/win32/shell/knownfolderid para mas FOLDERsIDs
 #define JAVA_LINK "https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe"
-#define MC_LINK "https://skmedix.pl/data/SKlauncher-3.1.1.jar"
+#define MC_LINK "https://skmedix.pl/data/SKlauncher%203.1.exe"
 #define FORGE_LINK "https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar"
 #define FORGE_DIR "1.20-forge-46.0.14"
 
@@ -111,16 +111,17 @@ int main()
         std::cout << "[ERROR] Minecraft no esta instalado!\n";
         Sleep(2000);
         SetConsoleTextAttribute(hConsole, 5);
-        std::cout << "[WARN] Cuando SkyLauncher se habra, cierralo\n";
+        std::cout << "[WARN] Cuando SKLauncher se habra, cierralo\n";
         Sleep(3000);
         string d_path;
         if (not FileManager::GetPath(FOLDERID_Desktop, d_path))
             return 0;
-        if (not FileManager::DownloadFile(MC_LINK, "Minecraft.jar", d_path))
+        if (not FileManager::DownloadFile(MC_LINK, "Minecraft.exe", d_path))
             return 0;
-        if (not FileManager::InstallFile("Minecraft.jar", d_path))
+        if (not FileManager::InstallFile("Minecraft.exe", d_path))
             return 0;
         sky_installed = true;
+        //COMPROVAR QUE .MINECRAFT ESTA.
     }
     SetConsoleTextAttribute(hConsole, 4);
     mc_path += "\\mods";
@@ -185,7 +186,7 @@ int main()
     if (sky_installed)
     {
         SetConsoleTextAttribute(hConsole, 5);
-        std::cout << "[WARN] Como usar SkyLauncher:\n";
+        std::cout << "[WARN] Como usar SKLauncher:\n";
         Sleep(2000);
         std::cout << "[WARN]   - Cambia a modo sin conexion, si no has comprado el minecraft\n";
         Sleep(2000);
