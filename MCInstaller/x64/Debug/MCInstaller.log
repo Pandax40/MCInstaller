@@ -1,3 +1,0 @@
-﻿  MCInstaller.cpp
-C:\Users\Pandax40\source\repos\MCInstaller\MCInstaller\MCInstaller.cpp(62,18): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-  MCInstaller.vcxproj -> C:\Users\Pandax40\source\repos\MCInstaller\x64\Debug\MCInstaller.exe
