@@ -1,5 +1,4 @@
-#ifndef DATMODIFIER_HPP
-#define DATMODIFIER_HPP
+#pragma once
 
 #include <iostream>
 #include <windows.h>
@@ -11,9 +10,8 @@ class DatModifier
 {
 private:
 	static bool MakeSpace(HANDLE& hFile, int& space, char*& buffer_end, DWORD& bytesRead);
-	static char* CreateServer(string name, string ip, bool textures, int& space, char n[]);
+	static char* CreateServer(std::string name, std::string ip, bool textures, int& space, char n[]);
 public:
-	static void SetServer(std::string name, std::string ip, bool textures);
+	static void SetServer(std::string name, std::string ip, bool textures, std::wstring path);
 };
 
-#endif

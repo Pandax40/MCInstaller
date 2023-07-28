@@ -1,6 +1,8 @@
 #include "DatModifier.h"
 
-bool DatModifier::MakeSpace(HANDLE& hFile, int& space, char*& buffer, DWORD& bytesRead)
+using std::string;
+
+/*bool DatModifier::MakeSpace(HANDLE& hFile, int& space, char*& buffer, DWORD& bytesRead)
 {
 	LARGE_INTEGER fileSize;
 	GetFileSizeEx(hFile, &fileSize); //Obtenemos el size del archivo.
@@ -65,11 +67,9 @@ bool Exist(HANDLE& hFile, string& ip)
 	return false;
 }
 
-void DatModifier::SetServer(string name, string ip, bool textures)
+void DatModifier::SetServer(string name, string ip, bool textures, std::string path)
 {
-	string path;
-	FileManager::GetPath(FOLDERID_RoamingAppData, path);
-	path += "\\.minecraft\\servers.dat";
+	path += L"\\.minecraft\\servers.dat";
 	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -102,4 +102,4 @@ void DatModifier::SetServer(string name, string ip, bool textures)
 		}
 	}
 	CloseHandle(hFile);
-}
+}*/

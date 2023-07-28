@@ -1,206 +1,155 @@
 // MCInstaller.cpp : Este archivo contiene la función "main". La ejecución del programa comienza y termina ahí.
-//
 
 #include <iostream>
 #include <Windows.h>
-#include "FileManager.h"
 #pragma comment(lib, "Shlwapi.lib")
 #include <shlwapi.h>
+
+#include "FileManager.h"
 #include "DatModifier.h"
-
+#include "ConsoleHandler.h"
+#include "JavaInstaller.h"
+using std::wstring_view, std::string_view, std::wstring, std::string;
 //https://learn.microsoft.com/es-es/windows/win32/shell/knownfolderid para mas FOLDERsIDs
-#define JAVA_LINK "https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe"
-#define MC_LINK "https://skmedix.pl/data/SKlauncher%203.1.exe"
-#define FORGE_LINK "https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar"
-#define FORGE_DIR "1.20-forge-46.0.14"
-
-#define JEI_LINK "https://mediafilez.forgecdn.net/files/4581/323/jei-1.20-forge-14.0.0.11.jar"
-#define JOURNEYMAP_LINK "https://mediafilez.forgecdn.net/files/4580/627/journeymap-1.20-5.9.8-forge.jar"
-#define SPARK_LINK "https://mediafilez.forgecdn.net/files/4587/309/spark-1.10.42-forge.jar"
-#define VOICE_LINK "https://mediafilez.forgecdn.net/files/4574/217/voicechat-forge-1.20-2.4.9.jar"
-#define COMPATIBLE_LINK "https://mediafilez.forgecdn.net/files/4580/511/MyServerIsCompatible-1.20-1.0.jar"
-#define ZOOM_LINK "https://mediafilez.forgecdn.net/files/4576/19/okzoomer-forge-1.20-3.0.0.jar"
-#define SERVER_NAME "TFF"
-#define SERVER_IP "tff.sytes.net"
-#define TEXTURES true
-
-HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+constexpr wstring_view JAVA_LINK = L"https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe";
+constexpr wstring_view MC_LINK = L"https://skmedix.pl/_data/SKlauncher-3.1.exe";
+constexpr wstring_view FORGE_LINK = L"https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar";
+const wchar_t * FORGE_DIR = L"1.20-forge-46.0.14";
+constexpr wstring_view MODS[6] =
+{
+    L"https://mediafilez.forgecdn.net/files/4581/323/jei-1.20-forge-14.0.0.11.jar",
+    L"https://mediafilez.forgecdn.net/files/4580/627/journeymap-1.20-5.9.8-forge.jar",
+    L"https://mediafilez.forgecdn.net/files/4574/217/voicechat-forge-1.20-2.4.9.jar",
+    L"https://mediafilez.forgecdn.net/files/4580/511/MyServerIsCompatible-1.20-1.0.jar",
+    L"https://mediafilez.forgecdn.net/files/4576/19/okzoomer-forge-1.20-3.0.0.jar",
+    L"https://mediafilez.forgecdn.net/files/4587/309/spark-1.10.42-forge.jar"
+};
+constexpr wstring_view MODS_NAME[6] =
+{
+    L"jei-1.20.jar",
+    L"hjourneymap-1.20.jar",
+    L"voicechat-forge-1.20.jar",
+    L"MyServerIsCompatible-1.20.jar",
+    L"okzoomer-forge-1.20.jar",
+    L"spark-forge.jar"
+};
+constexpr int numMods = 6;
+constexpr string_view SERVER_NAME = "TFF";
+constexpr string_view SERVER_IP = "tff.sytes.net";
+constexpr bool TEXTURES = true;
 
 /*
 * TODO:
 *  - Poder elegir cuanta ram se dedica al Minecraft.
-*  - ERROR: Si el usuario tiene un espacio en el nombre, se bugea
 *  - Hacer que hacepte lo de las texturas.
-*  - Poner los links de los mods en array o lista para poder leer facilmente en un while.
+*  - Implementar una barra de carga de descarga.
+* 
 */
 
-bool have_java(int version)
+int javaVersion()
 {
-    SetConsoleTextAttribute(hConsole, 4);
     char value[32];
     DWORD size = sizeof(value);
     HKEY hKey;
-    //Si java esta instalado:
-    if (ERROR_SUCCESS == RegOpenKey(HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JDK", &hKey) and
+    if (ERROR_SUCCESS == RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JDK", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) and
         ERROR_SUCCESS == RegGetValueA(hKey, NULL, "CurrentVersion", RRF_RT_REG_SZ, NULL, &value, &size))
-    {
-        int javaVer = (*(value)-'0') * 10 + (*(value + 1) - '0'); //char value --> int javaVer
-        if (javaVer >= version)
-        {
-            SetConsoleTextAttribute(hConsole, 7);
-            std::cout << "[INFO] Java version " << value << " detectado\n";
-            return true;
-        }
-        std::cout << "[ERROR] La version de Java es " << value << " se necesita la version 17 o posterior\n";
+        return (*value - '0') * 10 + (*(value + 1) - '0'); //char value --> int javaVer
+    return 0;
+}
+
+static void CleanModsDir(const FileManager& fileManager)
+{
+    WIN32_FIND_DATAW data;
+    HANDLE hFind = FindFirstFileW((fileManager.GetActualPath() + L"\\*.jar").c_str(), &data);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            wstring filePath = fileManager.GetActualPath() + L'\\' + data.cFileName;
+            DeleteFileW(filePath.c_str());
+        } while (FindNextFileW(hFind, &data) != 0);
+        FindClose(hFind);
     }
-    else
-        std::cout << "[ERROR] Java no esta instalado\n";
-    
-    return false;
 }
 
 int main()
 {   
-    int left_pos = GetSystemMetrics(SM_CXSCREEN) * 0.16;
-    SetWindowPos(GetConsoleWindow(), NULL, left_pos, 0, 1260, 300, SWP_SHOWWINDOW);
-    SetConsoleTextAttribute(hConsole, 1);
-    std::cout << " /$$$$$$$$/$$                       /$$$$$$$$/$$                     /$$       /$$$$$$                      /$$              /$$ /$$                    " << "\n";
-    std::cout << "|__  $$__/ $$                      | $$_____/__/                    | $$      |_  $$_/                     | $$             | $$| $$                    " << "\n";
-    std::cout << "   | $$  | $$$$$$$   /$$$$$$       | $$      /$$ /$$$$$$$   /$$$$$$ | $$        | $$   /$$$$$$$   /$$$$$$$/$$$$$$   /$$$$$$ | $$| $$  /$$$$$$   /$$$$$$ " << "\n";
-    std::cout << "   | $$  | $$__  $$ /$$__  $$      | $$$$$  | $$| $$__  $$ |____  $$| $$        | $$  | $$__  $$ /$$_____/_  $$_/  |____  $$| $$| $$ /$$__  $$ /$$__  $$" << "\n";
-    std::cout << "   | $$  | $$  \\ $$| $$$$$$$$      | $$__/  | $$| $$  \\ $$  /$$$$$$$| $$        | $$  | $$  \\ $$|  $$$$$$  | $$     /$$$$$$$| $$| $$| $$$$$$$$| $$  \\__/" << "\n";
-    std::cout << "   | $$  | $$  | $$| $$_____/      | $$     | $$| $$  | $$ /$$__  $$| $$        | $$  | $$  | $$ \\____  $$ | $$ /$$/$$__  $$| $$| $$| $$_____/| $$      " << "\n";
-    std::cout << "   | $$  | $$  | $$|  $$$$$$$      | $$     | $$| $$  | $$|  $$$$$$$| $$       /$$$$$$| $$  | $$ /$$$$$$$/ |  $$$$/  $$$$$$$| $$| $$|  $$$$$$$| $$      " << "\n";
-    std::cout << "   |__/  |__/  |__/ \\_______/      |__/     |__/|__/  |__/ \\_______/|__/      |______/|__/  |__/|_______/   \\___/  \\_______/|__/|__/ \\_______/|__/      " << "\n" << "\n";
-    SetConsoleTextAttribute(hConsole, 3);
-    std::cout << "                                        <|> Instalador del servidor 'The Final Frontier' creado por ";
-    SetConsoleTextAttribute(hConsole, 11);
-    std::cout << "Pandax40";
-    SetConsoleTextAttribute(hConsole, 3);
-    std::cout << " <|>\n\n";
-    Sleep(2000);
-    SetConsoleTextAttribute(hConsole, 4);
-    string t_path;
-    if (not FileManager::GetPath(FOLDERID_LocalAppData, t_path))
-        return 0;
-    t_path += "\\Temp\\mcinstaller";
-    while (not have_java(17))
+    ConsoleHandler console = ConsoleHandler();
+    FileManager fileManager;
+
+    const wchar_t* foldersTemp[] = {L"Temp", L"mcinstaller"};
+    while (javaVersion() < 20)
     {
-        Sleep(2000); 
-        SetConsoleTextAttribute(hConsole, 7);
-        std::cout << "[INFO] Descargando la version de Java 20, espere\n";
-        SetConsoleTextAttribute(hConsole, 4);
-        if (not FileManager::MakeDir(t_path))
-            return 0;
-        if(not FileManager::DownloadFile(JAVA_LINK, "java-20.exe", t_path))
-            return 0;
-        SetConsoleTextAttribute(hConsole, 7);
-        std::cout << "[INFO] Sigue los pasos del instalador de Java\n";
-        if (not FileManager::InstallFile("java-20.exe", t_path))
-            return 0;
-    }
-    Sleep(2000);
-    string mc_path;
-    if (not FileManager::GetPath(FOLDERID_RoamingAppData, mc_path))
-        return 0;
-    mc_path += "\\.minecraft";
-    bool sky_installed = false;
-    if (not PathIsDirectoryA(mc_path.c_str()))
-    {
-        SetConsoleTextAttribute(hConsole, 4);
-        std::cout << "[ERROR] Minecraft no esta instalado!\n";
         Sleep(2000);
-        SetConsoleTextAttribute(hConsole, 5);
-        std::cout << "[WARN] Cuando SKLauncher se habra, cierralo\n";
+        console.Print("Descargando la version de Java 20. Sigue los pasos del instalador de Java", ConsoleHandler::tINFO);
+        fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
+        fileManager.InstallFile(console, (wstring)JAVA_LINK, L"java-20.exe");
+        if (fileManager.failed()) return EXIT_FAILURE;
+    }
+
+    Sleep(2000);
+    fileManager.SetPath(console, FOLDERID_RoamingAppData, NULL, NULL);
+    if (fileManager.failed()) return EXIT_FAILURE;
+    bool sky_installed = false;
+    if (!PathIsDirectoryW((LPCWSTR)(fileManager.GetActualPath() + L'\\' + L".minecraft").c_str()))
+    {
+        console.Print("Minecraft no esta instalado!", ConsoleHandler::tWARN);
+        Sleep(2000);
+        console.Print("Cuando SKLauncher se habra, cierralo", ConsoleHandler::tWARN);
         Sleep(3000);
-        string d_path;
-        if (not FileManager::GetPath(FOLDERID_Desktop, d_path))
-            return 0;
-        if (not FileManager::DownloadFile(MC_LINK, "Minecraft.exe", d_path))
-            return 0;
-        if (not FileManager::InstallFile("Minecraft.exe", d_path))
-            return 0;
+        
+        fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
+        fileManager.InstallFile(console, (wstring)MC_LINK, L"Minecraft.exe");
+        if (fileManager.failed()) return EXIT_FAILURE;
+        
         sky_installed = true;
         //COMPROVAR QUE .MINECRAFT ESTA.
     }
-    SetConsoleTextAttribute(hConsole, 4);
-    mc_path += "\\mods";
-    if (not PathIsDirectoryA(mc_path.c_str()))
+
+    const wchar_t* foldersMods[] = { L".minecraft", L"mods"};
+    fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersMods, sizeof(foldersMods));
+    if (fileManager.failed()) return EXIT_FAILURE;
+
+    CleanModsDir(fileManager);
+
+    for (int i = 0; i < numMods; ++i)
     {
-        if (not FileManager::MakeDir(mc_path))
-            return 0;
+        fileManager.DownloadFile(console, (wstring)MODS[i], (wstring)MODS_NAME[i]);
     }
-    else
-    {
-        WIN32_FIND_DATAA data;
-        HANDLE hFind = FindFirstFileA((mc_path + "\\*.jar").c_str(), &data);
-        if (hFind != INVALID_HANDLE_VALUE) {
-            do {
-                string filePath = mc_path + "\\" + string(data.cFileName);
-                DeleteFileA(filePath.c_str());
-            } while (FindNextFileA(hFind, &data) != 0);
-            FindClose(hFind);
-        }
-    }
-    if (not FileManager::DownloadFile(JEI_LINK, "jei.jar", mc_path))
-        return 0;
-
-    if (not FileManager::DownloadFile(JOURNEYMAP_LINK, "journeymap.jar", mc_path))
-        return 0;
-
-    if (not FileManager::DownloadFile(SPARK_LINK, "spark.jar", mc_path))
-        return 0;
-
-    if (not FileManager::DownloadFile(VOICE_LINK, "voice-chat.jar", mc_path))
-        return 0;
-
-    if (not FileManager::DownloadFile(COMPATIBLE_LINK, "is-compatible.jar", mc_path))
-        return 0;
-
-    if (not FileManager::DownloadFile(ZOOM_LINK, "zoom.jar", mc_path))
-        return 0;
-
-    SetConsoleTextAttribute(hConsole, 7);
-    cout << "[INFO] Se han instalado los mods correctamente\n";
+    if (fileManager.failed()) return EXIT_FAILURE;
     
-    SetConsoleTextAttribute(hConsole, 4);
-    DatModifier::SetServer(SERVER_NAME, SERVER_IP, TEXTURES);
+    console.Print("Se han instalado los mods correctamente", ConsoleHandler::tINFO);
+    
+    //DatModifier::SetServer((string)SERVER_NAME, (string)SERVER_IP, TEXTURES);
     Sleep(2000);
 
-    if (not FileManager::GetPath(FOLDERID_RoamingAppData, mc_path))
-        return 0;
+    const wchar_t* foldersVersion[] = { L".minecraft", L"versions", FORGE_DIR};
+    fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersVersion, sizeof(foldersVersion));
+    if (fileManager.failed()) return EXIT_FAILURE;
 
-    mc_path += "\\.minecraft\\versions\\";
-    mc_path += FORGE_DIR;
-    if (not PathIsDirectoryA(mc_path.c_str()))
+    if (!PathIsDirectoryW(fileManager.GetActualPath().c_str()))
     {
-        SetConsoleTextAttribute(hConsole, 5);
-        cout << "[WARN] Espera a que se abra el Forge e Instalalo en la carpeta por defecto!\n";
+        console.Print("Espera a que se abra el Forge e Instalalo en la carpeta por defecto!", ConsoleHandler::tWARN);
         Sleep(2000);
-
-        if (not FileManager::DownloadFile(FORGE_LINK, "forge.jar", t_path))
-            return 0;
-        if (not FileManager::InstallFile("forge.jar", t_path))
-            return 0;
+        fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
+        fileManager.InstallFile(console, (wstring)FORGE_LINK, L"forge.jar");
+        if(fileManager.failed()) return EXIT_FAILURE;
     }
     if (sky_installed)
     {
-        SetConsoleTextAttribute(hConsole, 5);
-        std::cout << "[WARN] Como usar SKLauncher:\n";
-        Sleep(2000);
-        std::cout << "[WARN]   - Cambia a modo sin conexion, si no has comprado el minecraft\n";
-        Sleep(2000);
-        std::cout << "[WARN]   - Introduce el nombre que tendras en el juego\n";
-        Sleep(2000);
-        std::cout << "[WARN]   - Dale a 'Inicia sesion sin conexion'\n";
-        Sleep(2000);
-        std::cout << "[WARN]   - Selecciona 'Forge' y dale a Jugar\n";
-        Sleep(2000);
+        console.Print("Como usar SKLauncher:", ConsoleHandler::tINFO);
+        console.Print("  - Cambia a modo sin conexion, si no has comprado el minecraft", ConsoleHandler::tINFO);
+        console.Print("  - Introduce el nombre que tendras en el juego", ConsoleHandler::tINFO);
+        console.Print("  - Dale a 'Inicia sesion sin conexion'", ConsoleHandler::tINFO);
+        console.Print("  - Selecciona 'Forge' y dale a Jugar", ConsoleHandler::tINFO);
+        
+        Sleep(3000);
+        fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
+        fileManager.ExecuteFile(console, L"Minecraft.exe");
+        if (fileManager.failed()) return EXIT_FAILURE;
+        
+        Sleep(20000);
         system("PAUSE");
     }
-
-    SetConsoleTextAttribute(hConsole, 7);
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 // Ejecutar programa: Ctrl + F5 o menú Depurar > Iniciar sin depurar

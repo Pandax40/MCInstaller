@@ -1,67 +1,89 @@
 #include "FileManager.h"
 
-bool FileManager::GetPath(GUID folderid, string& path)
+using std::wstring, std::string;
+
+bool FileManager::MakeDir(const wstring& folder)
 {
-    path = "";
-    PWSTR path_ptr;
-    if (SHGetKnownFolderPath(folderid, 0, NULL, &path_ptr) == S_OK)
+    if (!CreateDirectoryW(folder.c_str(), NULL) and GetLastError() == ERROR_PATH_NOT_FOUND)
+        return false;
+    return true;
+}
+
+void FileManager::SetPath(const ConsoleHandler& console, GUID folderid, const wchar_t* folders[], int size)
+{
+    PWSTR folderPath;
+    if (SHGetKnownFolderPath(folderid, 0, NULL, &folderPath) != S_OK)
     {
-        PWSTR aux_ptr = path_ptr;
-        while (*path_ptr != 0) //Convertimos a un string
+        console.Print("No se ha podido encontrar el id de la carpeta", ConsoleHandler::tERROR);
+        isError = true;
+        return;
+    }
+    std::wostringstream wos;
+    wos << folderPath;
+    CoTaskMemFree(folderPath); //Liberamos memoria del puntero del string.
+    size /= sizeof(wchar_t*);
+    for (int i = 0; i < size; ++i)
+    {
+        wos << '\\' << folders[i];
+        if (!MakeDir(wos.str()))
         {
-            path += (char)*path_ptr;
-            path_ptr = path_ptr + 1;
+            console.Print("No se ha podido crear la carpeta", ConsoleHandler::tERROR);
+            isError = true;
+            return;
         }
-        CoTaskMemFree(static_cast<void*>(aux_ptr)); //Liberamos memoria del puntero del string.
-        return true;
     }
-    cout << "[ERROR] No se ha encontrado la carpeta indicada\n";
-    system("PAUSE");
-    return false;
+    path = wos.str();
+    return;
 }
 
-bool FileManager::MakeDir(string path)
+void FileManager::DownloadFile(const ConsoleHandler& console, const wstring& link, const wstring& name)
 {
-    if (CreateDirectoryA(path.c_str(), NULL) == 0 and GetLastError() == ERROR_PATH_NOT_FOUND)
+    if (isError) return;
+    wstring newPath = path + L'\\' + name;
+    if (URLDownloadToFileW(NULL, link.c_str(), newPath.c_str(), 0, NULL) != S_OK)
     {
-        cout << "[ERROR] No se puedo crear la carpeta " + path + "\n";
-        system("PAUSE");
-        return false;
+        console.Print("No se ha podido descargar el archivo", ConsoleHandler::tERROR);
+        isError = true;
     }
-    return true;
 }
 
-//https://learn.microsoft.com/es-es/windows/win32/shell/knownfolderid para mas FOLDERsIDs
-bool FileManager::DownloadFile(string link, string name, string path)
+void FileManager::InstallFile(const ConsoleHandler& console, const wstring& link, const wstring& name)
 {
-    path += "\\" + name;
-    if (URLDownloadToFileA(NULL, link.c_str(), path.c_str(), 0, NULL) != S_OK)
-    {
-        std::cout << "[ERROR] No se ha podido descargar el archivo " + name + "\n";
-        system("PAUSE");
-        return false;
-    }
-    return true;
+    DownloadFile(console, link, name);
+    if (!isError) ExecuteFile(console, name);
 }
 
-bool FileManager::InstallFile(string name, string path)
+void FileManager::ExecuteFile(const ConsoleHandler& console, const wstring& name)
 {
-    string aux_path = "cmd.exe /C \"" + path + "\\" + name + "\"";
-    char cmdLine[1024];
-    strcpy_s(cmdLine, aux_path.c_str());
-    STARTUPINFOA si;
+    if (isError) return;
+    wstring newPath = path + L'\\' + name;
+    wstring command = L"cmd.exe /C \"" + newPath + L'\"';
+
+    STARTUPINFOW si;
     PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-    if (not CreateProcessA(NULL, cmdLine, NULL, NULL, false, 0, NULL, path.c_str(), &si, &pi))
+
+    if (not CreateProcessW(NULL, (LPWSTR)command.c_str(), NULL, NULL, false, 0, NULL, path.c_str(), &si, &pi))
     {
-        cout << "[ERROR] No se ha podido abrir el archivo " + name + "\n";
-        system("PAUSE");
-        return false;
+        console.Print("No se ha podido abrir el archivo", ConsoleHandler::tERROR);
+        isError = true;
     }
     WaitForSingleObject(pi.hProcess, INFINITE);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    return true;
+}
+
+bool FileManager::failed() const
+{
+    return isError;
+}
+
+wstring FileManager::GetActualPath() const
+{
+    if (!isError)
+        return path;
+    else 
+        return wstring();
 }

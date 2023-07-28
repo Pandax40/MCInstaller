@@ -24,12 +24,18 @@
     <ClCompile Include="DatModifier.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
+    <ClCompile Include="ConsoleHandler.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
     <ClInclude Include="DatModifier.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleHandler.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
   </ItemGroup>
