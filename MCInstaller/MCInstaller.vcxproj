@@ -133,7 +133,6 @@
   <ItemGroup>
     <ClCompile Include="ConsoleHandler.cpp" />
     <ClCompile Include="DatModifier.cpp" />
-    <ClCompile Include="DowloadStatus.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="MCInstaller.cpp" />
   </ItemGroup>
