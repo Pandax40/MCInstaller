@@ -4,17 +4,18 @@
 #include <Windows.h>
 #pragma comment(lib, "Shlwapi.lib")
 #include <shlwapi.h>
-
 #include "FileManager.h"
 #include "DatModifier.h"
 #include "ConsoleHandler.h"
-#include "JavaInstaller.h"
 using std::wstring_view, std::string_view, std::wstring, std::string;
+
 //https://learn.microsoft.com/es-es/windows/win32/shell/knownfolderid para mas FOLDERsIDs
 constexpr wstring_view JAVA_LINK = L"https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe";
 constexpr wstring_view MC_LINK = L"https://skmedix.pl/_data/SKlauncher-3.1.exe";
+constexpr wstring_view MC_JSON_DEF = L"https://gitfront.io/r/Pandax40/raVGmnGL3ad1/MCInstaller/raw/JSON/launcher_profiles.json";
 constexpr wstring_view FORGE_LINK = L"https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar";
 const wchar_t * FORGE_DIR = L"1.20-forge-46.0.14";
+constexpr int MIN_JAVA_VERSION = 17;
 constexpr wstring_view MODS[6] =
 {
     L"https://mediafilez.forgecdn.net/files/4581/323/jei-1.20-forge-14.0.0.11.jar",
@@ -74,65 +75,89 @@ int main()
 {   
     ConsoleHandler console = ConsoleHandler();
     FileManager fileManager;
-
+    
+    //Comprobar Java
     const wchar_t* foldersTemp[] = {L"Temp", L"mcinstaller"};
-    while (javaVersion() < 20)
+    int javaChecks = 0;
+    while (javaVersion() < MIN_JAVA_VERSION)
     {
+        if (javaChecks > 0)
+        {
+            if (javaChecks == 3)
+            {
+                console.Print("CONTACTA POR DISCORD CON \"pandax40\"", ConsoleHandler::tERROR);
+                return EXIT_FAILURE;
+            }
+            else
+            {
+                console.Print("No se ha podido detectar la version de Java", ConsoleHandler::tWARN);
+                Sleep(2000);
+                console.Print("Prueba a instalar Java en la carpeta por defecto", ConsoleHandler::tWARN);
+            }
+        }
         Sleep(2000);
-        console.Print("Descargando la version de Java 20. Sigue los pasos del instalador de Java", ConsoleHandler::tINFO);
+        console.Print("Sigue los pasos del instalador. Descargando Java 20...", ConsoleHandler::tINFO);
         fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
         fileManager.InstallFile(console, (wstring)JAVA_LINK, L"java-20.exe");
-        if (fileManager.failed()) return EXIT_FAILURE;
+        if (fileManager.Failed()) return EXIT_FAILURE;
+        ++javaChecks;
     }
 
+    //Comprobar Minecraft
     Sleep(2000);
+    const wchar_t* foldersMC[] = { L".minecraft"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, NULL, NULL);
-    if (fileManager.failed()) return EXIT_FAILURE;
+    if (fileManager.Failed()) return EXIT_FAILURE;
     bool sky_installed = false;
     if (!PathIsDirectoryW((LPCWSTR)(fileManager.GetActualPath() + L'\\' + L".minecraft").c_str()))
     {
-        console.Print("Minecraft no esta instalado!", ConsoleHandler::tWARN);
-        Sleep(2000);
-        console.Print("Cuando SKLauncher se habra, cierralo", ConsoleHandler::tWARN);
+        console.Print("Descargando Minecraft...", ConsoleHandler::tWARN);
         Sleep(3000);
         
         fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
-        fileManager.InstallFile(console, (wstring)MC_LINK, L"Minecraft.exe");
-        if (fileManager.failed()) return EXIT_FAILURE;
+        fileManager.DownloadFile(console, (wstring)MC_LINK, L"Minecraft.exe", true);
+        if (fileManager.Failed()) return EXIT_FAILURE;
+
+        const wchar_t* foldersMC[] = { L".minecraft" };
+        fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersMC, sizeof(foldersMC));
+        fileManager.DownloadFile(console, (wstring)MC_JSON_DEF, L"launcher_profiles.json", false);
+        if (fileManager.Failed()) return EXIT_FAILURE;
         
         sky_installed = true;
-        //COMPROVAR QUE .MINECRAFT ESTA.
     }
-
+    
+    //Instalar Mods
     const wchar_t* foldersMods[] = { L".minecraft", L"mods"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersMods, sizeof(foldersMods));
-    if (fileManager.failed()) return EXIT_FAILURE;
-
+    if (fileManager.Failed()) return EXIT_FAILURE;
     CleanModsDir(fileManager);
-
     for (int i = 0; i < numMods; ++i)
     {
-        fileManager.DownloadFile(console, (wstring)MODS[i], (wstring)MODS_NAME[i]);
+        fileManager.DownloadFile(console, (wstring)MODS[i], (wstring)MODS_NAME[i], false);
     }
-    if (fileManager.failed()) return EXIT_FAILURE;
-    
+    if (fileManager.Failed()) return EXIT_FAILURE;
     console.Print("Se han instalado los mods correctamente", ConsoleHandler::tINFO);
     
-    //DatModifier::SetServer((string)SERVER_NAME, (string)SERVER_IP, TEXTURES);
+    //Añadir el servidor a la lista
+    fileManager.SetPath(console, FOLDERID_RoamingAppData, NULL, NULL);
+    DatModifier::SetServer((string)SERVER_NAME, (string)SERVER_IP, TEXTURES, fileManager.GetActualPath());
     Sleep(2000);
 
-    const wchar_t* foldersVersion[] = { L".minecraft", L"versions", FORGE_DIR};
+    //Comprobar Forge
+    const wchar_t* foldersVersion[] = { L".minecraft", L"versions"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersVersion, sizeof(foldersVersion));
-    if (fileManager.failed()) return EXIT_FAILURE;
-
-    if (!PathIsDirectoryW(fileManager.GetActualPath().c_str()))
+    if (fileManager.Failed()) return EXIT_FAILURE;
+    if (!PathIsDirectoryW((fileManager.GetActualPath() + L'\\' + FORGE_DIR).c_str()))
     {
-        console.Print("Espera a que se abra el Forge e Instalalo en la carpeta por defecto!", ConsoleHandler::tWARN);
+        console.Print("Instala Forge en la carpeta por DEFECTO. Descargando Forge...", ConsoleHandler::tWARN);
         Sleep(2000);
         fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
         fileManager.InstallFile(console, (wstring)FORGE_LINK, L"forge.jar");
-        if(fileManager.failed()) return EXIT_FAILURE;
+        
+        if(fileManager.Failed()) return EXIT_FAILURE;
     }
+    
+    //Instrucciones del SK Launcher
     if (sky_installed)
     {
         console.Print("Como usar SKLauncher:", ConsoleHandler::tINFO);
@@ -142,13 +167,15 @@ int main()
         console.Print("  - Selecciona 'Forge' y dale a Jugar", ConsoleHandler::tINFO);
         
         Sleep(3000);
+        //Abre el SK Launcher del escritorio
         fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
         fileManager.ExecuteFile(console, L"Minecraft.exe");
-        if (fileManager.failed()) return EXIT_FAILURE;
+        if (fileManager.Failed()) return EXIT_FAILURE;
         
-        Sleep(20000);
+        Sleep(20000); //Pausa para leer las instrucciones
         system("PAUSE");
     }
+
     return EXIT_SUCCESS;
 }
 

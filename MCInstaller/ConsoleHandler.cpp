@@ -9,6 +9,9 @@ ConsoleHandler::ConsoleHandler()
         int left_pos = int(GetSystemMetrics(SM_CXSCREEN) * 0.16f);
         SetWindowPos(GetConsoleWindow(), NULL, left_pos, 0, 1260, 300, SWP_SHOWWINDOW);
         SetConsoleTextAttribute(hConsole, BLUE);
+        //Console NoResize
+        HWND consoleWindow = GetConsoleWindow();
+        SetWindowLong(consoleWindow, GWL_STYLE, GetWindowLong(consoleWindow, GWL_STYLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX);
         std::cout << " /$$$$$$$$/$$                       /$$$$$$$$/$$                     /$$       /$$$$$$                      /$$              /$$ /$$                    " << "\n";
         std::cout << "|__  $$__/ $$                      | $$_____/__/                    | $$      |_  $$_/                     | $$             | $$| $$                    " << "\n";
         std::cout << "   | $$  | $$$$$$$   /$$$$$$       | $$      /$$ /$$$$$$$   /$$$$$$ | $$        | $$   /$$$$$$$   /$$$$$$$/$$$$$$   /$$$$$$ | $$| $$  /$$$$$$   /$$$$$$ " << "\n";

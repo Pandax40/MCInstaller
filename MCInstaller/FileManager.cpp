@@ -1,12 +1,15 @@
 #include "FileManager.h"
+#include "DowloadStatus.h"
 
 using std::wstring, std::string;
 
-bool FileManager::MakeDir(const wstring& folder)
+void ShowConsoleCursor(bool showFlag)
 {
-    if (!CreateDirectoryW(folder.c_str(), NULL) and GetLastError() == ERROR_PATH_NOT_FOUND)
-        return false;
-    return true;
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = showFlag;
+    SetConsoleCursorInfo(out, &cursorInfo);
 }
 
 void FileManager::SetPath(const ConsoleHandler& console, GUID folderid, const wchar_t* folders[], int size)
@@ -25,7 +28,7 @@ void FileManager::SetPath(const ConsoleHandler& console, GUID folderid, const wc
     for (int i = 0; i < size; ++i)
     {
         wos << '\\' << folders[i];
-        if (!MakeDir(wos.str()))
+        if (!CreateDirectoryW(wos.str().c_str(), NULL) and GetLastError() == ERROR_PATH_NOT_FOUND)
         {
             console.Print("No se ha podido crear la carpeta", ConsoleHandler::tERROR);
             isError = true;
@@ -33,24 +36,31 @@ void FileManager::SetPath(const ConsoleHandler& console, GUID folderid, const wc
         }
     }
     path = wos.str();
-    return;
 }
 
-void FileManager::DownloadFile(const ConsoleHandler& console, const wstring& link, const wstring& name)
+void FileManager::DownloadFile(const ConsoleHandler& console, const wstring& link, const wstring& name, bool print)
 {
     if (isError) return;
+
     wstring newPath = path + L'\\' + name;
-    if (URLDownloadToFileW(NULL, link.c_str(), newPath.c_str(), 0, NULL) != S_OK)
+    DowloadStatus status;
+    status.printBar = print;
+    ShowConsoleCursor(false);
+    if (URLDownloadToFileW(NULL, link.c_str(), newPath.c_str(), 0, &status) != S_OK)
     {
+        ShowConsoleCursor(true);
         console.Print("No se ha podido descargar el archivo", ConsoleHandler::tERROR);
         isError = true;
     }
+    ShowConsoleCursor(true);
 }
 
 void FileManager::InstallFile(const ConsoleHandler& console, const wstring& link, const wstring& name)
 {
-    DownloadFile(console, link, name);
-    if (!isError) ExecuteFile(console, name);
+    if (isError) return;
+
+    DownloadFile(console, link, name, true);
+    ExecuteFile(console, name);
 }
 
 void FileManager::ExecuteFile(const ConsoleHandler& console, const wstring& name)
@@ -75,15 +85,12 @@ void FileManager::ExecuteFile(const ConsoleHandler& console, const wstring& name
     CloseHandle(pi.hThread);
 }
 
-bool FileManager::failed() const
+bool FileManager::Failed() const
 {
     return isError;
 }
 
 wstring FileManager::GetActualPath() const
 {
-    if (!isError)
-        return path;
-    else 
-        return wstring();
+    return isError ? wstring() : path;
 }

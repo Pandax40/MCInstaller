@@ -2,7 +2,7 @@
 
 using std::string;
 
-/*bool DatModifier::MakeSpace(HANDLE& hFile, int& space, char*& buffer, DWORD& bytesRead)
+bool DatModifier::MakeSpace(HANDLE& hFile, int& space, char*& buffer, DWORD& bytesRead)
 {
 	LARGE_INTEGER fileSize;
 	GetFileSizeEx(hFile, &fileSize); //Obtenemos el size del archivo.
@@ -67,13 +67,13 @@ bool Exist(HANDLE& hFile, string& ip)
 	return false;
 }
 
-void DatModifier::SetServer(string name, string ip, bool textures, std::string path)
+void DatModifier::SetServer(string name, string ip, bool textures, std::wstring path)
 {
 	path += L"\\.minecraft\\servers.dat";
-	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		hFile = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		hFile = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		char head[] = { 0x0A, 0x00, 0x00, 0x09, 0x00, 0x07, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 		WriteFile(hFile, &head, 19, NULL, NULL);
 	}
@@ -102,4 +102,4 @@ void DatModifier::SetServer(string name, string ip, bool textures, std::string p
 		}
 	}
 	CloseHandle(hFile);
-}*/
+}
