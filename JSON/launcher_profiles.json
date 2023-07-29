@@ -1,0 +1,22 @@
+{
+  "profiles": {
+    "e4f48ebad51c43bd955ec80f6f0519ce": {
+      "name": "",
+      "type": "latest-snapshot",
+      "created": "2023-07-29T21:10:55+02:00",
+      "lastUsed": "2023-07-29T21:10:55+02:00"
+    },
+    "2c96d72a4f9b497bb8752132109f9500": {
+      "name": "",
+      "type": "latest-release",
+      "created": "2023-07-29T21:10:55+02:00",
+      "lastUsed": "2023-07-29T21:10:55+02:00"
+    }
+  },
+  "selectedProfile": "2c96d72a4f9b497bb8752132109f9500",
+  "settings": {
+    "enableAdvanced": false,
+    "profileSorting": "byName"
+  },
+  "version": 3
+}
