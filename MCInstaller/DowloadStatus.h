@@ -40,6 +40,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE OnProgress(ULONG ulProgress, ULONG ulProgressMax, ULONG ulStatusCode, __RPC__in_opt LPCWSTR szStatusText)
     {
+        //Posibles mejoras de optimizacion
         if (!printBar) return S_OK;
         int progressPerc = int((float(ulProgress) / ulProgressMax) * 100);
         if (ulProgressMax and (!isPrinted or progressPerc != 100) and

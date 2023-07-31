@@ -7,37 +7,9 @@
 #include "FileManager.h"
 #include "DatModifier.h"
 #include "ConsoleHandler.h"
-using std::wstring_view, std::string_view, std::wstring, std::string;
+#include "Const.h"
 
-//https://learn.microsoft.com/es-es/windows/win32/shell/knownfolderid para mas FOLDERsIDs
-constexpr wstring_view JAVA_LINK = L"https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe";
-constexpr wstring_view MC_LINK = L"https://skmedix.pl/_data/SKlauncher-3.1.exe";
-constexpr wstring_view MC_JSON_DEF = L"https://gitfront.io/r/Pandax40/raVGmnGL3ad1/MCInstaller/raw/JSON/launcher_profiles.json";
-constexpr wstring_view FORGE_LINK = L"https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar";
-const wchar_t * FORGE_DIR = L"1.20-forge-46.0.14";
-constexpr int MIN_JAVA_VERSION = 17;
-constexpr wstring_view MODS[6] =
-{
-    L"https://mediafilez.forgecdn.net/files/4581/323/jei-1.20-forge-14.0.0.11.jar",
-    L"https://mediafilez.forgecdn.net/files/4580/627/journeymap-1.20-5.9.8-forge.jar",
-    L"https://mediafilez.forgecdn.net/files/4574/217/voicechat-forge-1.20-2.4.9.jar",
-    L"https://mediafilez.forgecdn.net/files/4580/511/MyServerIsCompatible-1.20-1.0.jar",
-    L"https://mediafilez.forgecdn.net/files/4576/19/okzoomer-forge-1.20-3.0.0.jar",
-    L"https://mediafilez.forgecdn.net/files/4587/309/spark-1.10.42-forge.jar"
-};
-constexpr wstring_view MODS_NAME[6] =
-{
-    L"jei-1.20.jar",
-    L"hjourneymap-1.20.jar",
-    L"voicechat-forge-1.20.jar",
-    L"MyServerIsCompatible-1.20.jar",
-    L"okzoomer-forge-1.20.jar",
-    L"spark-forge.jar"
-};
-constexpr int numMods = 6;
-constexpr string_view SERVER_NAME = "TFF";
-constexpr string_view SERVER_IP = "tff.sytes.net";
-constexpr bool TEXTURES = true;
+using std::wstring_view, std::string_view, std::wstring, std::string;
 
 /*
 * TODO:
@@ -78,12 +50,11 @@ int main()
     
     //Comprobar Java
     const wchar_t* foldersTemp[] = {L"Temp", L"mcinstaller"};
-    int javaChecks = 0;
-    while (javaVersion() < MIN_JAVA_VERSION)
+    for (int i = 0; javaVersion() < Constants::MIN_JAVA_VERSION; ++i)
     {
-        if (javaChecks > 0)
+        if (i > 0)
         {
-            if (javaChecks == 3)
+            if (i == 3)
             {
                 console.Print("CONTACTA POR DISCORD CON \"pandax40\"", ConsoleHandler::tERROR);
                 return EXIT_FAILURE;
@@ -98,63 +69,63 @@ int main()
         Sleep(2000);
         console.Print("Sigue los pasos del instalador. Descargando Java 20...", ConsoleHandler::tINFO);
         fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
-        fileManager.InstallFile(console, (wstring)JAVA_LINK, L"java-20.exe");
-        if (fileManager.Failed()) return EXIT_FAILURE;
-        ++javaChecks;
+        fileManager.InstallFile(console, (wstring)Constants::JAVA_LINK, L"java-20.exe");
+        if (fileManager.Failed()) 
+            return EXIT_FAILURE;
     }
 
     //Comprobar Minecraft
     Sleep(2000);
-    const wchar_t* foldersMC[] = { L".minecraft"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, NULL, NULL);
-    if (fileManager.Failed()) return EXIT_FAILURE;
+    if (fileManager.Failed()) 
+        return EXIT_FAILURE;
     bool sky_installed = false;
     if (!PathIsDirectoryW((LPCWSTR)(fileManager.GetActualPath() + L'\\' + L".minecraft").c_str()))
     {
         console.Print("Descargando Minecraft...", ConsoleHandler::tWARN);
         Sleep(3000);
         
+        //Descarga Minecraft en Desktop
         fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
-        fileManager.DownloadFile(console, (wstring)MC_LINK, L"Minecraft.exe", true);
-        if (fileManager.Failed()) return EXIT_FAILURE;
+        fileManager.DownloadFile(console, (wstring)Constants::MC_LINK, L"Minecraft.exe", true);
+        if (fileManager.Failed()) 
+            return EXIT_FAILURE;
 
+        //Creacion del archivo launcher_profiles.json necesario para Forge.jar
         const wchar_t* foldersMC[] = { L".minecraft" };
         fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersMC, sizeof(foldersMC));
-        fileManager.DownloadFile(console, (wstring)MC_JSON_DEF, L"launcher_profiles.json", false);
-        if (fileManager.Failed()) return EXIT_FAILURE;
-        
+        fileManager.DownloadFile(console, (wstring)Constants::MC_JSON_DEF, L"launcher_profiles.json", false);
+        if (fileManager.Failed()) 
+            return EXIT_FAILURE;
         sky_installed = true;
     }
     
     //Instalar Mods
     const wchar_t* foldersMods[] = { L".minecraft", L"mods"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersMods, sizeof(foldersMods));
-    if (fileManager.Failed()) return EXIT_FAILURE;
     CleanModsDir(fileManager);
-    for (int i = 0; i < numMods; ++i)
-    {
-        fileManager.DownloadFile(console, (wstring)MODS[i], (wstring)MODS_NAME[i], false);
-    }
-    if (fileManager.Failed()) return EXIT_FAILURE;
+    for (int i = 0; i < Constants::NUM_MODS; ++i)
+        fileManager.DownloadFile(console, (wstring)Constants::MODS[i], (wstring)Constants::MODS_NAME[i], false);
+    if (fileManager.Failed())
+        return EXIT_FAILURE;
     console.Print("Se han instalado los mods correctamente", ConsoleHandler::tINFO);
     
     //Añadir el servidor a la lista
     fileManager.SetPath(console, FOLDERID_RoamingAppData, NULL, NULL);
-    DatModifier::SetServer((string)SERVER_NAME, (string)SERVER_IP, TEXTURES, fileManager.GetActualPath());
+    DatModifier::SetServer((string)Constants::SERVER_NAME, (string)Constants::SERVER_IP, Constants::TEXTURES, fileManager.GetActualPath());
     Sleep(2000);
 
     //Comprobar Forge
     const wchar_t* foldersVersion[] = { L".minecraft", L"versions"};
     fileManager.SetPath(console, FOLDERID_RoamingAppData, foldersVersion, sizeof(foldersVersion));
-    if (fileManager.Failed()) return EXIT_FAILURE;
-    if (!PathIsDirectoryW((fileManager.GetActualPath() + L'\\' + FORGE_DIR).c_str()))
+    if (!PathIsDirectoryW((fileManager.GetActualPath() + L'\\' + Constants::FORGE_DIR).c_str()))
     {
         console.Print("Instala Forge en la carpeta por DEFECTO. Descargando Forge...", ConsoleHandler::tWARN);
         Sleep(2000);
         fileManager.SetPath(console, FOLDERID_LocalAppData, foldersTemp, sizeof(foldersTemp));
-        fileManager.InstallFile(console, (wstring)FORGE_LINK, L"forge.jar");
-        
-        if(fileManager.Failed()) return EXIT_FAILURE;
+        fileManager.InstallFile(console, (wstring)Constants::FORGE_LINK, L"forge.jar");
+        if(fileManager.Failed()) 
+            return EXIT_FAILURE;
     }
     
     //Instrucciones del SK Launcher
@@ -165,8 +136,8 @@ int main()
         console.Print("  - Introduce el nombre que tendras en el juego", ConsoleHandler::tINFO);
         console.Print("  - Dale a 'Inicia sesion sin conexion'", ConsoleHandler::tINFO);
         console.Print("  - Selecciona 'Forge' y dale a Jugar", ConsoleHandler::tINFO);
-        
         Sleep(3000);
+
         //Abre el SK Launcher del escritorio
         fileManager.SetPath(console, FOLDERID_Desktop, NULL, NULL);
         fileManager.ExecuteFile(console, L"Minecraft.exe");

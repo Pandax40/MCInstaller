@@ -138,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleHandler.h" />
+    <ClInclude Include="Const.h" />
     <ClInclude Include="DatModifier.h" />
     <ClInclude Include="DowloadStatus.h" />
     <ClInclude Include="FileManager.h" />
