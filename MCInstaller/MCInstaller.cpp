@@ -15,8 +15,6 @@ using std::wstring_view, std::string_view, std::wstring, std::string;
 * TODO:
 *  - Poder elegir cuanta ram se dedica al Minecraft.
 *  - Hacer que hacepte lo de las texturas.
-*  - Implementar una barra de carga de descarga.
-* 
 */
 
 int javaVersion()

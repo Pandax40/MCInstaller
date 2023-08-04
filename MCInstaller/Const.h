@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 
-namespace Constants
+ namespace Constants
 {
     constexpr std::wstring_view JAVA_LINK = L"https://download.oracle.com/java/20/latest/jdk-20_windows-x64_bin.exe";
     constexpr std::wstring_view MC_LINK = L"https://skmedix.pl/_data/SKlauncher-3.1.exe";
     constexpr std::wstring_view MC_JSON_DEF = L"https://gitfront.io/r/Pandax40/raVGmnGL3ad1/MCInstaller/raw/JSON/launcher_profiles.json";
     constexpr std::wstring_view FORGE_LINK = L"https://maven.minecraftforge.net/net/minecraftforge/forge/1.20-46.0.14/forge-1.20-46.0.14-installer.jar";
-    const wchar_t* FORGE_DIR = L"1.20-forge-46.0.14";
+    constexpr auto FORGE_DIR = L"1.20-forge-46.0.14";
     constexpr int MIN_JAVA_VERSION = 17;
     constexpr std::wstring_view MODS[6] =
     {
